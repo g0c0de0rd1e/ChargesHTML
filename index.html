@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .charge {
+            position: absolute;
+            height: 50px;
+            width: 50px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff0000;
+            transition: all 2s ease-in-out;
+        }
+        #charges {
+            margin-top: 20px; /* Добавляет отступ между формой ввода и анимацией */
+        }
+    </style>
+</head>
+<body>
+
+<h2>Анимация двух электрических зарядов</h2>
+
+<p>Введите начальные и конечные точки для каждого заряда и выберите его знак:</p>
+
+<form id="form">
+  <input type="button" value="Создать формы для зарядов" onclick="createChargeForms()">
+</form>
+
+<div id="charges"></div>
+
+<script>
+var charges = [];
+
+function createChargeForms() {
+    var numCharges = 2; // Фиксируем количество зарядов на два
+    var form = document.getElementById("form");
+    for (var i = 0; i < numCharges; i++) {
+        var label = document.createElement("label");
+        label.textContent = "Заряд " + (i+1) + ": ";
+        form.appendChild(label);
+        var startInput = document.createElement("input");
+        startInput.type = "text";
+        startInput.id = "start" + i;
+        startInput.name = "start" + i;
+        startInput.placeholder = "Начальная точка (x, y)";
+        form.appendChild(startInput);
+        var endInput = document.createElement("input");
+        endInput.type = "text";
+        endInput.id = "end" + i;
+        endInput.name = "end" + i;
+        endInput.placeholder = "Конечная точка (x, y)";
+        form.appendChild(endInput);
+        var signInput = document.createElement("select");
+        signInput.id = "sign" + i;
+        signInput.name = "sign" + i;
+        var positiveOption = document.createElement("option");
+        positiveOption.value = "positive";
+        positiveOption.text = "Положительный";
+        signInput.appendChild(positiveOption);
+        var negativeOption = document.createElement("option");
+        negativeOption.value = "negative";
+        negativeOption.text = "Отрицательный";
+        signInput.appendChild(negativeOption);
+        form.appendChild(signInput);
+        var br = document.createElement("br");
+        form.appendChild(br);
+    }
+    var button = document.createElement("input");
+    button.type = "button";
+    button.value = "Запустить анимацию";
+    button.onclick = moveCharges;
+    form.appendChild(button);
+}
+
+function moveCharges() {
+    var numCharges = 2; // Фиксируем количество зарядов на два
+    var chargesDiv = document.getElementById("charges");
+    chargesDiv.innerHTML = "";
+    charges = [];
+    for (var i = 0; i < numCharges; i++) {
+        var charge = document.createElement("div");
+        charge.className = "charge";
+        var sign = document.getElementById("sign" + i).value;
+        charge.style.backgroundColor = sign === "positive" ? "red" : "skyblue"; // Изменяем цвет отрицательных зарядов на небесный
+        var start = document.getElementById("start" + i).value.split(',').map(Number);
+        var end = document.getElementById("end" + i).value.split(',').map(Number);
+        // Проверяем, что начальная точка находится под формой и не выходит за пределы страницы
+        if (start[1] < form.getBoundingClientRect().bottom || start[1] > window.innerHeight || start[0] > window.innerWidth) {
+            alert("Начальная точка заряда " + (i+1) + " находится вне допустимого диапазона. Пожалуйста, введите другие координаты.");
+            return;
+        }
+        // Проверяем, что конечная точка не выходит за пределы страницы
+        if (end[1] > window.innerHeight || end[0] > window.innerWidth) {
+            alert("Конечная точка заряда " + (i+1) + " находится вне допустимого диапазона. Пожалуйста, введите другие координаты.");
+            return;
+        }
+        charge.style.left = start[0] + 'px';
+        charge.style.top = start[1] + 'px';
+        chargesDiv.appendChild(charge);
+        charges.push({element: charge, end: end, sign: sign});
+        setInterval(updateCharge, 1000, charge, end); // Обновляем положение каждого заряда каждую секунду
+    }
+}
+
+function updateCharge(charge, end) {
+    for (var i = 0; i < charges.length; i++) {
+        if (charges[i].element !== charge) {
+            var dx = parseInt(charge.style.left) - parseInt(charges[i].element.style.left);
+            var dy = parseInt(charge.style.top) - parseInt(charges[i].element.style.top);
+            var distance = Math.sqrt(dx*dx + dy*dy);
+            if (distance < 20) {
+                if (charges[i].sign !== charge.sign) {
+                    // Притягиваем противоположные заряды
+                    charge.style.left = charges[i].element.style.left;
+                    charge.style.top = charges[i].element.style.top;
+                } else {
+                    // Отталкиваем одинаковые заряды
+                    charge.style.left = end[0] + 'px';
+                    charge.style.top = end[1] + 'px';
+                }
+            } else {
+                // Если заряды находятся на расстоянии больше 20 пикселей, продолжаем движение к конечной точке
+                charge.style.left = end[0] + 'px';
+                charge.style.top = end[1] + 'px';
+            }
+        }
+    }
+}
+</script>
+
+</body>
+</html>
